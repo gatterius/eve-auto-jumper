@@ -11,7 +11,18 @@ import pyttsx3
 import random
 
 
-class AutoJumper():
+class AutoJumper:
+    """
+    This is a class for constant jumping through the next destination object (stargate/ansiblex gate/citadel) while any
+    is present in overview. It works by selecting a detection area, finding a part with given color in it and pressing
+    jump on this part.
+    Attributes:
+        dest_colors: list of colors which belong to destination objects in overview
+        engine: text-to-speech engine
+        upper_left_x, upper_left_y: upper left corner of destination object detection area of screen
+        bottom_right_x, bottom_right_y: bottom right corner of destination object detection area of screen
+    """
+
     def __init__(self, dest_colors, start_timeout):
         time.sleep(start_timeout)
         self.dest_colors = dest_colors
@@ -21,20 +32,52 @@ class AutoJumper():
         self.engine.say('AutoJumper has started')
         self.engine.runAndWait()
 
-    def find_color(self, arr, elem):
+    def find_color(self, arr, color):
+        """
+        Finds pixel of given color on image (in np.array form) by simply scanning through the whole array. Returns the
+        coordinates of first found pixel (zeros if color wa not found).
+
+        Parameters:
+            -arr: image in np.array form
+            -color: color to be found
+
+        Returns:
+            -result: True or False depending on whether the color was found
+            -x: x coordinate of found pixel (0 if none found)
+            -y: y coordinate of found pixel (0 if none found)
+        """
         for x in range(arr.shape[1]):
             for y in range(arr.shape[0]):
-                if list(arr[y, x, :]) == elem:
+                if list(arr[y, x, :]) == color:
                     return True, x, y
         return False, 0, 0
 
     def jump_to(self, x, y):
+        """
+        Jumps through the gate by pressing D key on given screen coordinates.
+
+        Parameters:
+            -x: x coordinate of gate in overview window
+            -y: y coordinate of gate in overview window
+        Returns:
+            None
+        """
         pyautogui.keyDown('d')
         time.sleep(random.uniform(0.2, 0.3))
         pyautogui.click(x=x, y=y, clicks=2, interval=random.uniform(0.08, 0.12))
         pyautogui.keyUp('d')
 
     def choose_area(self):
+        """
+        Saves given coordinates which are used to detect destination objects
+
+        Parameters:
+            -x: x coordinate of gate in overview window
+            -y: y coordinate of gate in overview window
+        Returns:
+            None
+        """
+
         self.engine.say('Put mouse on the upper left point and press J')
         self.engine.runAndWait()
         flag = True
@@ -57,6 +100,16 @@ class AutoJumper():
         self.engine.runAndWait()
 
     def find_dest_gate(self):
+        """
+        Finds destination object icon in the detection area of screen by looking for pixels of designated color and
+        jumps through it. The search is conducted continuously, no limit to the number of jumps is given. The cycle can
+        be stopped my pressing 'M' key.
+
+        Parameters:
+            None
+        Returns:
+            None
+        """
         flag = True
         while flag:
             time.sleep(random.uniform(0.15, 0.25))
