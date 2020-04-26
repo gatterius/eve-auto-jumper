@@ -31,8 +31,10 @@ class AutoJumper:
         self.engine.setProperty('voice', voices[1].id)
         self.engine.say('AutoJumper has started')
         self.engine.runAndWait()
-        self.upper_left_x, self.upper_left_y = 0, 0
-        self.bottom_right_x, self.bottom_right_y = 0, 0
+        self.engine.say('Setting overview window coordinates')
+        self.engine.runAndWait()
+        self.over_upper_left_x, self.over_upper_left_y, \
+        self.over_bottom_right_x, self.over_bottom_right_y = self.choose_screen_area()
 
     def find_color(self, arr, color):
         """
@@ -69,16 +71,19 @@ class AutoJumper:
         pyautogui.click(x=x, y=y, clicks=2, interval=random.uniform(0.08, 0.12))
         pyautogui.keyUp('d')
 
-    def choose_area(self):
+    def choose_screen_area(self):
         """
-        Saves given coordinates of overview window which are used to detect destination objects.
+        Saves screen coordinates by choosing bbox corners using mouse pointer.
 
         Parameters:
             None
         Returns:
-            None
+            upper_left_x: x coordinate of upper left corner of bbox
+            upper_left_y: y coordinate of upper left corner of bbox
+            bottom_right_x: x coordinate of bottom right corner of bbox
+            bottom_right_y: y coordinate of bottom right corner of bbox
         """
-
+        upper_left_x, upper_left_y, bottom_right_x, bottom_right_y = 0, 0, 0, 0
         self.engine.say('Put mouse on the upper left point and press J')
         self.engine.runAndWait()
         flag = True
@@ -86,57 +91,62 @@ class AutoJumper:
             if keyboard.is_pressed('m'):
                 flag = False
             if keyboard.is_pressed('j'):
-                self.upper_left_x, self.upper_left_y = pyautogui.position()
+                upper_left_x, upper_left_y = pyautogui.position()
                 self.engine.say('Upper left point saved')
                 self.engine.say('Put mouse on the bottom right point and press K')
                 self.engine.runAndWait()
-                print(f'Upper left point coordinates: X {self.upper_left_x}, Y {self.upper_left_y}')
+                print(f'Upper left point coordinates: X {upper_left_x}, Y {upper_left_y}')
             if keyboard.is_pressed('k'):
-                self.bottom_right_x, self.bottom_right_y = pyautogui.position()
+                bottom_right_x, bottom_right_y = pyautogui.position()
                 self.engine.say('Bottom right point saved')
                 self.engine.runAndWait()
-                print(f'Bottom right point coordinates: X {self.bottom_right_x}, Y {self.bottom_right_y}')
+                print(f'Bottom right point coordinates: X {bottom_right_x}, Y {bottom_right_y}')
                 flag = False
         self.engine.say(f'All coordinates saved')
         self.engine.runAndWait()
+        return upper_left_x, upper_left_y, bottom_right_x, bottom_right_y
 
-    def find_dest_gate(self):
+    def find_dest_gate(self, mode):
         """
         Finds destination object icon in the detection area of screen by looking for pixels of designated color and
         jumps through it. The search is conducted continuously, no limit to the number of jumps is given. The cycle can
         be stopped my pressing 'M' key.
 
         Parameters:
-            None
+            mode: mode of next gate detection
         Returns:
             None
         """
-        flag = True
-        while flag:
-            time.sleep(random.uniform(0.15, 0.25))
-            im = ImageGrab.grab()
-            # im.save('screen.bmp')
-            orig_width, orig_height = im.size
-            center_x = orig_width // 2
-            center_y = orig_height // 2
+        if mode == 'color':
+            flag = True
+            while flag:
+                time.sleep(random.uniform(0.15, 0.25))
+                im = ImageGrab.grab()
+                # im.save('screen.bmp')
+                orig_width, orig_height = im.size
+                center_x = orig_width // 2
+                center_y = orig_height // 2
 
-            im_cropped = im.crop((self.upper_left_x, self.upper_left_y, self.bottom_right_x, self.bottom_right_y))
-            im_arr = np.array(im_cropped)
-            # im.save('cropped.bmp')
+                im_cropped = im.crop((self.over_upper_left_x, self.over_upper_left_y,
+                                      self.over_bottom_right_x, self.over_bottom_right_y))
+                im_arr = np.array(im_cropped)
+                # im.save('cropped.bmp')
 
-            for dest_color in self.dest_colors:
-                result, x, y = self.find_color(im_arr, dest_color)
-                x += self.upper_left_x
-                y += self.upper_left_y
-                if result:
-                    print(f'Dest gate found at {x}, {y}')
-                    self.jump_to(x, y)
-                    pyautogui.moveTo(center_x, center_y, duration=random.uniform(0.4, 0.6),
-                                     tween=pyautogui.easeInOutQuad)
-                    time.sleep(4)
-                    break
-            print('No gate found')
+                for dest_color in self.dest_colors:
+                    result, x, y = self.find_color(im_arr, dest_color)
+                    x += self.over_upper_left_x
+                    y += self.over_upper_left_y
+                    if result:
+                        print(f'Dest gate found at {x}, {y}')
+                        self.jump_to(x, y)
+                        pyautogui.moveTo(center_x, center_y, duration=random.uniform(0.4, 0.6),
+                                         tween=pyautogui.easeInOutQuad)
+                        time.sleep(4)
+                        break
+                print('No gate found')
 
-            if keyboard.is_pressed('m'):
-                print('AutoJumper shutting down')
-                flag = False
+                if keyboard.is_pressed('m'):
+                    print('AutoJumper shutting down')
+                    flag = False
+        # elif mode == 'ocr':
+
