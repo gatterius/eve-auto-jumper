@@ -31,11 +31,13 @@ class AutoJumper:
         self.engine.setProperty('voice', voices[1].id)
         self.engine.say('AutoJumper has started')
         self.engine.runAndWait()
+        self.upper_left_x, self.upper_left_y = 0, 0
+        self.bottom_right_x, self.bottom_right_y = 0, 0
 
     def find_color(self, arr, color):
         """
         Finds pixel of given color on image (in np.array form) by simply scanning through the whole array. Returns the
-        coordinates of first found pixel (zeros if color wa not found).
+        coordinates of first found pixel (zeros if color was not found).
 
         Parameters:
             -arr: image in np.array form
@@ -69,11 +71,10 @@ class AutoJumper:
 
     def choose_area(self):
         """
-        Saves given coordinates which are used to detect destination objects
+        Saves given coordinates of overview window which are used to detect destination objects.
 
         Parameters:
-            -x: x coordinate of gate in overview window
-            -y: y coordinate of gate in overview window
+            None
         Returns:
             None
         """
